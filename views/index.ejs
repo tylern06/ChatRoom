@@ -1,0 +1,60 @@
+<html>
+<head>
+	<title>Chat Room</title>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="/style.css">
+	<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			var socket = io.connect();
+			var name = prompt('Please enter your name:');
+			window.setInterval(function() {
+			  var elem = document.getElementById('chatbox');
+			  elem.scrollTop = elem.scrollHeight;
+			  // console.log('socket status', socket.connected)
+			  // if(!socket.connected){
+			  // 	socket.emit('user_disconnected',{name: name})
+			  // }
+			}, 1000);
+			socket.emit('new_user', {name: name});
+			socket.on('load_messages', function(data){
+					for(var i = 0; i < data.messages.length; i++){
+						$('.chat').append("<p>"+ data.messages[i].name + ": " + data.messages[i].message + "</p")
+					}
+			});
+			socket.on('display_new_user', function(data){
+				$('.chat').append("<p>***** " + data.new_user + " entered the room *****</p>")
+			});
+			$('#form').submit(function(){
+				socket.emit('sending_message',{message: $('.message').val(), name: name})
+				//clear message in text area
+				$('.message').val('')
+				return false;
+			});
+			//broadcast recent message to all users
+			socket.on('broadcast_messages', function(data){
+				$('.chat').append("<p>"+ data.messages[data.messages.length-1].name + ": " + data.messages[data.messages.length-1].message + "</p")
+			});
+			socket.on('broadcast_dc', function(data){
+				$('.chat').append("<p>***** " + data.new_user + " left the room *****</p>");			
+			})
+		});
+	</script>
+</head>
+	<body>
+		<div id='container'>
+			<div class='box'>
+				<h3>Conversation Board</h3>
+				<div id='chatbox' class='chat'>
+
+				</div>
+				<form id='form'>
+					<textarea class='message' rows='4' cols='100'></textarea>
+					<input type='submit' class='send' value='Send'>
+				</form>
+			</div>
+		</div>
+	</body>
+</html>
+				
+
